@@ -27,6 +27,16 @@
             }
         </ul>
     }
+    <form asp-action="GetFunctionOutput" method="post">
+        <input type="text" name="contractAddress" placeholder="Enter contract address" />
+        <input type="text" name="functionName" placeholder="Enter function name" />
+        <button type="submit">Get Function Output</button>
+    </form>
+    @if (ViewBag.FunctionOutput != null)
+    {
+        <h3>Output of the function:</h3>
+        <p>@ViewBag.FunctionOutput</p>
+    }
 </div>
 
 

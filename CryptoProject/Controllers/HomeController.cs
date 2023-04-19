@@ -92,7 +92,20 @@ namespace CryptoProject.Controllers
             // Return the ABI string
             return contractAbi;
         }
+        public async Task<IActionResult> GetFunctionOutput(string contractAddress, string functionName)
+        {
+            string contractAbi = await GetContractABI(contractAddress);
+            var contract = web3.Eth.GetContract(contractAbi, contractAddress);
 
+            // Get the function
+            var function = contract.GetFunction(functionName);
+
+            // Call the function and get the output
+            var result = await function.CallAsync<string>();
+            ViewBag.FunctionOutput = result;
+
+            return View("Index");
+        }
         public IActionResult Privacy()
         {
             return View();
