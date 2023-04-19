@@ -3,45 +3,10 @@
 }
 
 <div class="text-center">
-    <input type="text" id="ethereumAddress" placeholder="Enter Ethereum address" />
-    <button id="getBalanceButton">Get Balance</button>
-    <div id="balanceResult"></div>
+    <h1 class="display-4">Welcome</h1>
+    <p>Balance of Ethereum Foundation's account in Wei: @ViewBag.BalanceInWei</p>
+    <p>Balance of Ethereum Foundation's account in Ether: @ViewBag.BalanceInEther</p>
 </div>
 
-<script>
-    // the code isnt speaking to the GetBalanceAsync method in the Home controller    // the URL is correct
-    // it returns undefined
-    // this is the error in the console
-    // Uncaught (in promise) SyntaxError: Unexpected token < in JSON at position 0
-    // at XMLHttpRequest.xhr.onload (jquery-3.6.0.min.js:2)
-       
-    $(document).ready(function () {
-        $("#getBalanceButton").click(function () {
-            console.log('Generated URL:', '@Url.Action("GetBalanceAsync", "Home")');
-            var address = $("#ethereumAddress").val();
-            if (address) {
-                $.ajax({
-                    url: '@Url.Action("GetBalanceAsync", "Home")',
-                    type: 'GET',
-                    data: { address: address },
-                    dataType: 'json',
-                    success: function (response) {
-                        if (response.success) {
-                            $("#balanceResult").html("Balance: " + response.balance + " Ether");
-                        } else {
-                            $("#balanceResult").html("Error: " + response.message);
-                        }
-                    },
-                    error: function (jqXHR, textStatus, errorThrown) {
-                        console.log("AJAX error:", textStatus, errorThrown);
-                        $("#balanceResult").html("Error: Unable to fetch balance.");
-                    }
-                });
-            } else {
-                $("#balanceResult").html("Error: Please enter a valid Ethereum address.");
-            }
-        });
-    }); 
-</script>
 
                             
