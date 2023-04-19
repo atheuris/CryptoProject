@@ -1,12 +1,14 @@
 ﻿using CryptoProject.Models;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
-using System;
-using System.Text;
-using Nethereum.Hex.HexConvertors.Extensions;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Nethereum.Contracts;
 using Nethereum.Web3;
-using static System.Net.WebRequestMethods;
+using System;
+using System.Diagnostics;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace CryptoProject.Controllers
 {
@@ -31,6 +33,66 @@ namespace CryptoProject.Controllers
             return View();
         }
 
+        [HttpPost]
+        public async Task<IActionResult> GetBalance(string address)
+        {
+            var web3 = new Web3("https://mainnet.infura.io/v3/7005a3a8653c4819840c862e01b0ce94");
+            var balance = await web3.Eth.GetBalance.SendRequestAsync(address);
+            ViewBag.BalanceInWei = balance.Value;
+            ViewBag.BalanceInEther = Web3.Convert.FromWei(balance.Value);
+            ViewBag.Address = address;
+
+            return View("Index");
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> GetFunctions(string contractAddress)
+        {
+            string contractAbi = await GetContractABI(contractAddress);
+            var contract = new Contract(null, contractAbi, contractAddress);
+            var functions = contract.ContractBuilder.ContractABI.Functions;
+
+            List<string> functionSignatures = new List<string>();
+            foreach (var function in functions)
+            {
+                var inputParams = string.Join(", ", function.InputParameters.Select(p => $"{p.Type} {p.Name}"));
+                var outputParams = string.Join(", ", function.OutputParameters.Select(p => $"{p.Type} {p.Name}"));
+                var functionSignature = $"{function.Name}({inputParams})";
+                functionSignatures.Add(functionSignature);
+            }
+
+            ViewBag.Functions = functionSignatures;
+            ViewBag.ContractAddress = contractAddress;
+            return View("Index");
+        }
+            private async Task<string> GetContractABI(string contractAddress)
+        {
+            // Replace with your Etherscan API key
+            string etherscanApiKey = "7UI59WUIDUBUDJRQDNUG45WQ5CY4R8SWX2";
+
+            // Create an HttpClient to make the request
+            HttpClient httpClient = new HttpClient();
+
+            // Build the Etherscan API request URL
+            string requestUrl = $"https://api.etherscan.io/api?module=contract&action=getabi&address={contractAddress}&apikey={etherscanApiKey}";
+
+            // Make the request
+            HttpResponseMessage response = await httpClient.GetAsync(requestUrl);
+
+            // Ensure a successful response
+            response.EnsureSuccessStatusCode();
+
+            // Read the response content as a string
+            string responseContent = await response.Content.ReadAsStringAsync();
+
+            // Deserialize the JSON response to a dynamic object
+            JsonDocument jsonResponse = JsonDocument.Parse(responseContent);
+            string contractAbi = jsonResponse.RootElement.GetProperty("result").GetString();
+            // Return the ABI string
+            return contractAbi;
+        }
+
         public IActionResult Privacy()
         {
             return View();
@@ -41,10 +103,5 @@ namespace CryptoProject.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
-
-
-        
-
-
     }
 }

@@ -2,11 +2,31 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
+<<div class="text-center">
     <h1 class="display-4">Welcome</h1>
-    <p>Balance of Ethereum Foundation's account in Wei: @ViewBag.BalanceInWei</p>
-    <p>Balance of Ethereum Foundation's account in Ether: @ViewBag.BalanceInEther</p>
+    <form asp-action="GetBalance" method="post">
+        <input type="text" name="address" placeholder="Enter Ethereum address" />
+        <button type="submit">Get Balance</button>
+    </form>
+    @if (ViewBag.BalanceInEther != null)
+    {
+        <p>Balance for @ViewBag.Address: @ViewBag.BalanceInEther Ether</p>
+    }
+
+    <form asp-action="GetFunctions" method="post">
+        <input type="text" name="contractAddress" placeholder="Enter contract address" />
+        <button type="submit">Get Functions</button>
+    </form>
+    @if (ViewBag.Functions != null)
+    {
+        <h3>Functions of @ViewBag.ContractAddress:</h3>
+        <ul>
+            @foreach (var function in ViewBag.Functions)
+            {
+                <li>@function</li>
+            }
+        </ul>
+    }
 </div>
 
 
-                            
