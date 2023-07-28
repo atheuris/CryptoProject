@@ -104,17 +104,39 @@ namespace CryptoProject.Controllers
             // Get the function
             var function = contract.GetFunction(functionName);
 
-            // Call the function and get the output
-            var result = await function.CallAsync<string>();
-            ViewBag.FunctionOutput = result;
+            // Get the function ABI
+            var functionABI = contract.ContractBuilder.ContractABI.Functions.FirstOrDefault(f => f.Name == functionName);
+            if (functionABI == null)
+            {
+                // Handle the case when the function is not found in the ABI
+                return View("Index");
+            }
+
+            // Check the output type
+            var outputParameter = functionABI.OutputParameters[0];
+            if (outputParameter.ABIType.Name.StartsWith("int"))
+            {
+                var result = await function.CallAsync<int>();
+                ViewBag.FunctionOutput = result.ToString(); // Convert the integer output to a string
+            }
+            else if (outputParameter.ABIType.Name == "string")
+            {
+                var result = await function.CallAsync<string>();
+                ViewBag.FunctionOutput = result;
+            }
+            else
+            {
+                // Handle the case when the output type is not supported
+                ViewBag.FunctionOutput = "unsupported";
+            }
 
             // Prompt the GPT-3 language model
-            var prompt = $"Function output for {functionName}: {result}.";
+             // var prompt = $"Function output for {functionName}: {result}.";
             var openaiApiKey = "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";
             var httpClient = new HttpClient();
             var content = new StringContent(JsonSerializer.Serialize(new
             {
-                prompt,
+                // prompt,
                 temperature = 0.5,
                 max_tokens = 50,
                 n = 1
@@ -129,6 +151,7 @@ namespace CryptoProject.Controllers
 
             return View("Index");
         }
+
 
         public IActionResult Privacy()
         {
