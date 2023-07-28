@@ -1,6 +1,33 @@
-﻿@{
+﻿@using System.Text.Json
+
+@{
     ViewData["Title"] = "Privacy Policy";
 }
+
 <h1>@ViewData["Title"]</h1>
 
 <p>Use this page to detail your site's privacy policy.</p>
+
+<form method="post">
+    <input type="text" name="walletAddress" placeholder="Enter wallet address" required />
+    <input type="submit" value="Search" />
+</form>
+
+@if (ViewBag.ContractAddresses.ValueKind != JsonValueKind.Null)
+{
+    var contractAddresses = (JsonElement)ViewBag.ContractAddresses;
+    if (contractAddresses.ValueKind == JsonValueKind.Array && contractAddresses.GetArrayLength() > 0)
+    {
+        <h2>Deployed contracts:</h2>
+        <ul>
+            @foreach (var address in contractAddresses.EnumerateArray())
+            {
+                <li>@address.GetString()</li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p>The address has not deployed any contracts.</p>
+    }
+}

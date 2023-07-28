@@ -9,6 +9,9 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Net.Http.Headers;
+using System.Text;
+
 
 namespace CryptoProject.Controllers
 {
@@ -17,6 +20,7 @@ namespace CryptoProject.Controllers
         private readonly ILogger<HomeController> _logger;
         private static string infuraUrl = "https://mainnet.infura.io/v3/7005a3a8653c4819840c862e01b0ce94";
         private static Web3 web3 = new Web3(infuraUrl);
+        private static HttpClient _httpClient = new HttpClient();
 
         public HomeController(ILogger<HomeController> logger)
         {
@@ -104,17 +108,45 @@ namespace CryptoProject.Controllers
             var result = await function.CallAsync<string>();
             ViewBag.FunctionOutput = result;
 
+            // Prompt the GPT-3 language model
+            var prompt = $"Function output for {functionName}: {result}.";
+            var openaiApiKey = "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";
+            var httpClient = new HttpClient();
+            var content = new StringContent(JsonSerializer.Serialize(new
+            {
+                prompt,
+                temperature = 0.5,
+                max_tokens = 50,
+                n = 1
+            }), Encoding.UTF8, "application/json");
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openaiApiKey);
+            var response = await httpClient.PostAsync("https://api.openai.com/v1/engines/text-davinci-002/completions", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var jsonResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
+            var generatedText = jsonResponse.GetProperty("choices")[0].GetProperty("text").GetString();
+
+            ViewBag.GeneratedText = generatedText;
+
             return View("Index");
         }
+
         public IActionResult Privacy()
         {
+            ViewBag.ContractAddresses = JsonDocument.Parse("{}").RootElement;
             return View();
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+        [HttpPost]
+        public async Task<IActionResult> Privacy(string walletAddress)
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            var response = await _httpClient.PostAsJsonAsync("http://localhost:5000/get_contracts", new { wallet_address = walletAddress });
+            var result = await response.Content.ReadAsStringAsync();
+            var jsonDocument = JsonDocument.Parse(result);
+            var contractAddresses = jsonDocument.RootElement.GetProperty("contract_addresses");
+
+            ViewBag.ContractAddresses = contractAddresses;
+
+            return View();
         }
     }
 }
